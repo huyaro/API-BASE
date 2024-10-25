@@ -7,12 +7,12 @@ __description__ =
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db import get_db
-from app.models.user import UserModel
+from app.db import use_db
+from app.models.user import TabUser
 from app.repository import BaseRepository
 
 
-class UserRepository(BaseRepository[UserModel]):
-    def __init__(self, db_session: AsyncSession = Depends(get_db)):
-        super().__init__(model=UserModel, db=db_session)
+class UserRepository(BaseRepository[TabUser]):
+    def __init__(self, db_session: AsyncSession = Depends(use_db)):
+        super().__init__(model=TabUser, db=db_session)
         ...

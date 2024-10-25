@@ -5,16 +5,7 @@ __version__ = 0.0.1
 __description__ = 用户模型
 """
 
-from app.schemas import BaseSchema
+from app.models.user import TabUser
+from app.utils.models import create_schema
 
-
-class UserSchema(BaseSchema):
-    ...
-
-
-class UserCreate(UserSchema):
-    ...
-
-
-class UserRead(UserSchema):
-    ...
+UserSchema = create_schema(TabUser)
