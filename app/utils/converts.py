@@ -6,7 +6,7 @@ __description__ = 各类转换工具(均为无依赖的纯函数)
 """
 import re
 from datetime import datetime
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 
 import arrow
 import ujson
@@ -40,7 +40,7 @@ def camel_to_snake(name: str) -> str:
 # 自定义序列化函数
 def __decimal_serializer(obj):
     if isinstance(obj, Decimal):
-        return str(obj)  # 将 Decimal 转为字符串
+        return float(format_decimal(obj))
     elif isinstance(obj, datetime):
         return dt_to_str(obj)
     raise TypeError(f"Type {type(obj)} not serializable")
@@ -60,3 +60,24 @@ def dumps_json(json_obj: str | dict | list) -> str:
         maybe_json_obj = loads_json(json_obj)
 
     return ujson.dumps(maybe_json_obj, ensure_ascii=False, separators=(",", ":"), default=__decimal_serializer)
+
+
+# ===========================数值转换===========================
+def format_decimal(value: Decimal | str | float | int | None, digits: int = 2) -> Decimal:
+    # 检查是否为 None 或空字符串
+    if value is None or value == "":
+        return Decimal(0).quantize(Decimal(f"0.{'0' * digits}"), rounding=ROUND_HALF_UP)
+
+    # 如果 value 已经是 Decimal 类型，直接使用
+    if isinstance(value, Decimal):
+        decimal_value = value
+    else:
+        # 尝试将值转换为 Decimal
+        try:
+            decimal_value = Decimal(value)
+        except ValueError:
+            raise ValueError(f"Invalid input[{value}]: must be a valid number.")
+
+    # 这里使用了 ROUND_HALF_UP 来控制小数的舍入方式, 金额一般都是向上取四舍五入
+    return decimal_value.quantize(Decimal(f"0.{'0' * digits}"), rounding=ROUND_HALF_UP)
+

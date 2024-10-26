@@ -9,3 +9,5 @@ from app.models.user import TabUser
 from app.utils.models import create_schema
 
 UserSchema = create_schema(TabUser)
+
+UserSimple = create_schema(TabUser, include=[TabUser.id, TabUser.username, TabUser.age, TabUser.last_login_time])

@@ -4,17 +4,17 @@ __date__ = 2024-10-25
 __version__ = 0.0.1
 __description__ = schema 与model 的处理工具
 """
-
 from typing import Any, Callable, Optional, Type
 
-from pydantic import BaseModel, ConfigDict, create_model, field_validator
+from pydantic import BaseModel, create_model, field_validator
 from pydantic.fields import FieldInfo
 from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.orm import InstrumentedAttribute
 
 from app.ctx import T_TABLE
 from app.models import BaseTable
-from app.utils.converts import dumps_json, snake_to_camel
+from app.schemas import BaseSchema
+from app.utils.converts import dumps_json
 
 
 def table_to_schema(
@@ -131,10 +131,9 @@ def create_schema(
             base_validators[validator_func.__name__] = field_validator(_name)(validator_func)
 
     # 动态创建模型
-    base_config = ConfigDict(alias_generator=snake_to_camel, populate_by_name=True, from_attributes=True)
     schema_model = create_model(
         f"{model_name}Schema",
-        __config__=base_config,
+        __base__=BaseSchema,
         __validators__=base_validators,
         **schema_fields
     )

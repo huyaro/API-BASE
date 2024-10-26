@@ -4,13 +4,12 @@ __date__ = 2024-10-20
 __version__ = 0.0.1
 __description__ = 逻辑处理层
 """
-from typing import List, Sequence
+from typing import Sequence
 
 from fastapi import Depends
 
-from app.models.user import TabUser
 from app.repository.user import UserRepository
-from app.schemas.user import UserSchema
+from app.schemas.user import UserSchema, UserSimple
 
 
 class UserService:
@@ -22,5 +21,11 @@ class UserService:
         res_model = await self.user_dao.get_by_id(data_id)
         return UserSchema.model_validate(res_model)
 
-    async def get_all(self) -> Sequence[TabUser]:
-        return await self.user_dao.get_all()
+    async def get_all(self) -> Sequence[UserSchema]:
+        users = await self.user_dao.get_all()
+        # 类型转换 table => schema
+        return [UserSchema.model_validate(user) for user in users]
+
+    async def get_all_simple(self):
+        users = await self.user_dao.get_all()
+        return [UserSimple.model_validate(user) for user in users]
