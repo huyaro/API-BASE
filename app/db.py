@@ -4,35 +4,40 @@ __date__ = 2024-10-20
 __version__ = 0.0.1
 __description__ = 数据库及redis连接相关配置
 """
+
 from contextlib import asynccontextmanager
+from typing import Any
 
 import redis
 from loguru import logger
 from redis.asyncio import ConnectionPool, Redis
 from sqlalchemy import Engine, event
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
+from app.models import BaseTable
+from app.settings import APP_ENV, RunEnv, db_settings
+from app.utils.iterators import filter_dict_keys
 from app.utils.serials import dumps_json
 
+DB_POOL_SIZE = 5 if RunEnv.DEV == APP_ENV else 30
+REDIS_POOL_SIZE = 5 if RunEnv.DEV == APP_ENV else 50
+
 # =============================== DATABASE ===============================
-ASYNC_DATABASE_URL = "postgresql+asyncpg://postgres:pgsql2023@localhost/example"
+ASYNC_DATABASE_URL = db_settings.build_db_url()
 async_engine = create_async_engine(
     ASYNC_DATABASE_URL,
-    pool_size=10,
+    pool_size=DB_POOL_SIZE,
     max_overflow=20,
     pool_timeout=30,
     pool_recycle=1800,
     pool_pre_ping=False,
     json_serializer=dumps_json,
-    isolation_level="READ COMMITTED"
+    isolation_level="READ COMMITTED",
 )
-AsyncSessionLocal = sessionmaker(
-    bind=async_engine,
-    expire_on_commit=False,
-    autoflush=False,
-    class_=AsyncSession
-)
+AsyncSessionLocal = sessionmaker(bind=async_engine, expire_on_commit=False, autoflush=False, class_=AsyncSession)
 
 
 async def use_db():
@@ -59,17 +64,17 @@ def after_cursor_execute(conn, cursor, statement, parameters, context, executema
 
 
 # =============================== REDIS ===============================
-REDIS_URL = "redis://localhost:6379/0"
+REDIS_URL = db_settings.build_redis_url()
 redis_pool = ConnectionPool.from_url(REDIS_URL, max_connections=10)
 # 异步redis
 async_rds_pool = ConnectionPool.from_url(
     REDIS_URL,
+    max_connections=REDIS_POOL_SIZE,
     decode_responses=True,
-    max_connections=10,
     health_check_interval=30,
     socket_timeout=5,  # 设置socket读取数据的超时时间（秒）
     socket_connect_timeout=5,  # 设置socket连接超时时间（秒）
-    retry_on_timeout=True  # 在超时的情况下重新尝试连接
+    retry_on_timeout=True,  # 在超时的情况下重新尝试连接
 )
 async_redis = Redis(connection_pool=async_rds_pool)
 
@@ -93,3 +98,53 @@ async def use_ctx_redis():
         yield Redis(connection_pool=async_rds_pool)
 
 
+async def pg_upsert(
+    session: AsyncSession,
+    table_type: type[BaseTable],
+    values: list[dict[str, Any]],
+    conflict_columns: list[str],
+    ignore_columns: list[str] = None,
+    batch_size=300,
+):
+    """
+        异步版本的upsert. 不要在Ignore_columns中忽略 update_time,在更新时只要model_type中有该字段会自动更新为当前时间
+
+    :param session: AsyncSession
+    :param table_type: 基于Base的声明式模型
+    :param values: 要写入的值或模型
+    :param conflict_columns: 模型中标记为unique的一列或多列
+    :param ignore_columns: 要忽略update的列(一般是create_time,update_time之类的)
+    :param batch_size: 单次写入多少数量. 默认300
+    :return:
+    """
+    if not values:
+        raise ValueError("values can't be empty")
+
+    final_ignore_columns = ["id", "created_time", "updated_time"]
+    if ignore_columns is not None:
+        final_ignore_columns.extend(ignore_columns)
+
+    fill_values = filter_dict_keys(values, exclude=final_ignore_columns)
+
+    batch_result = []
+    try:
+        for i in range(0, len(fill_values), batch_size):
+            batch_data = fill_values[i : i + batch_size]
+            # 只有pg方言中导入的insert函数才有on_conflict_do_update方法
+            insert_stmt = pg_insert(table_type).returning(table_type.id)
+            update_columns = {
+                col.name: col
+                for col in insert_stmt.excluded
+                if col.name not in [*conflict_columns, *final_ignore_columns]
+            }
+
+            upsert_stmt = insert_stmt.on_conflict_do_update(index_elements=conflict_columns, set_=update_columns)
+            wait_res = await session.execute(upsert_stmt, batch_data)
+            result = wait_res.all()
+            batch_result.extend([_ids[0] for _ids in result])
+
+        await session.commit()
+        return batch_result
+    except SQLAlchemyError as e:
+        await session.rollback()
+        raise e

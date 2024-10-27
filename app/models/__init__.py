@@ -17,8 +17,8 @@ class BaseTable(AsyncAttrs, DeclarativeBase):
 
     id = mapped_column(BIGINT, primary_key=True, autoincrement=True, nullable=False, sort_order=-99)
 
-    created_time = mapped_column(TIMESTAMP, nullable=False, sort_order=100, insert_default=func.now)
-    updated_time = mapped_column(TIMESTAMP, nullable=False, sort_order=101, insert_default=func.now, onupdate=func.now)
+    created_time = mapped_column(TIMESTAMP, nullable=False, sort_order=100, default=func.current_time)
+    updated_time = mapped_column(TIMESTAMP, nullable=False, sort_order=101, default=func.current_time, onupdate=func.current_time)
 
     def __repr__(self) -> str:
         return str(self.to_dict())

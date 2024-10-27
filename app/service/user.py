@@ -8,13 +8,13 @@ from typing import Annotated, Sequence
 
 from fastapi import Depends
 
-from app.repository.user import UserRepository
+from app.dao.user import UserDao
 from app.schemas.user import UserSchema, UserSimple
 
 
 class UserService:
 
-    USER_REPOS = Annotated[UserRepository, Depends()]
+    USER_REPOS = Annotated[UserDao, Depends()]
 
     def __init__(self, user_dao: USER_REPOS):
         self.user_dao = user_dao

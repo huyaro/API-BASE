@@ -12,15 +12,22 @@ import arrow
 FMT_DATE = "YYYY-MM-DD"
 FMT_TIME = "HH:mm:ss"
 FMT_DT = f"{FMT_DATE} {FMT_TIME}"
+FMT_DT_NO_GAP = "YYYYMMDDHHmmss"
 
 
-def dt_to_str(date_obj: datetime, pat=FMT_DT) -> str:
+def dt_now() -> datetime:
+    return arrow.now().naive
+
+
+def dt_to_str(date_obj: datetime = None, pat=FMT_DT) -> str:
     """
         将日期对象转换为指定的pat 格式
     :param date_obj: 日期实例
     :param pat: 日期格式化模式
     :return:
     """
+    if date_obj is None:
+        date_obj = arrow.now()
     return arrow.get(date_obj).format(pat)
 
 

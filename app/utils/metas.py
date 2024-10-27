@@ -4,9 +4,10 @@ __date__ = 2024-10-25
 __version__ = 0.0.1
 __description__ = schema 与model 的处理工具
 """
-from typing import Any, Callable, Optional, Type
+from typing import Any, Callable, Optional, Set, Type, Union, get_args, get_origin
 
 from pydantic import BaseModel, create_model, field_validator
+from pydantic.alias_generators import to_snake
 from pydantic.fields import FieldInfo
 from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.orm import InstrumentedAttribute
@@ -17,14 +18,52 @@ from app.schemas import BaseSchema
 from app.utils.serials import dumps_json
 
 
+def schema_to_dict(
+    schema: BaseSchema,
+    table_cls: Type[BaseTable],
+    /,
+    exclude_none: bool = True,
+    exclude: Set[str] | None = None,
+    include: Set[str] | None = None,
+    extra: dict[str, Any] = None,
+    mapping: dict[str, Callable[[Any], Any]] = None,
+) -> dict[str, Any]:
+    """
+        将schema 的入参转换为table 实例匹配的字典项. 如果schema中的某些字段(包括extra中) 在table 中不存在,会自动被忽略掉
+        默认情况下schema 使用的是小驼峰形式,而table 使用的是下划线格式.
+    :param schema: 表单实例
+    :param table_cls: 数据库表类型
+    :param exclude_none: 是否排除none值(默认排除)
+    :param exclude: 需要排除的字段
+    :param include: 需要包含的字段
+    :param extra: 附加的其它数据
+    :param mapping: 对指定的key进行映射转换
+    :return:　匹配table 类型的 dict
+    """
+    schema_data = schema.model_dump(exclude_none=exclude_none, exclude=exclude, include=include)
+    if extra and any(extra):
+        schema_data.update(extra)
+    if mapping is None:
+        mapping = {}
+
+    table_cols = [col.name for col in sa_inspect(table_cls).columns]
+    table_data = {
+        to_snake(k):
+            mapping.get(k, mapping.get(to_snake(k)))(v) if (k in mapping or to_snake(k) in mapping) else v
+        for k, v in schema_data.items() if to_snake(k) in table_cols
+    }
+
+    return table_data
+
+
 def table_to_schema(
     instance: BaseTable,
     schema: Type[BaseModel],
-    *,
+    /,
     exclude_none: bool = True,
     exclude: list[str | InstrumentedAttribute] = None,
     include: list[str | InstrumentedAttribute] = None,
-    ext_data: dict[str, Any] = None
+    extra: dict[str, Any] = None
 ) -> BaseModel:
     """
         转换model数据到指定的schema类型
@@ -33,7 +72,7 @@ def table_to_schema(
     :param exclude_none:是否去除none
     :param exclude: 排除字段
     :param include: 包含字段
-    :param ext_data: 附加数据(key必须是schema已有的字段,否则会报错)
+    :param extra: 附加数据(key必须是schema已有的字段,否则会报错)
     :return:
     """
     data = {}
@@ -52,8 +91,8 @@ def table_to_schema(
         include = list(map(lambda f: f.name if isinstance(f, InstrumentedAttribute) else f, include))
         data = dict(filter(lambda item: item[0] in include, data.items()))
 
-    if ext_data:
-        data.update(ext_data)
+    if extra:
+        data.update(extra)
 
     return schema.model_validate_json(dumps_json(data))
 
@@ -92,8 +131,9 @@ def create_schema(
     # 构建每个字段的FieldInfo数据
     schema_fields = {}
     for col in model_columns:
-        py_type = Optional[col.type.python_type] if col.nullable else col.type.python_type
-        default = None if col.nullable else ...
+        # 是否为必填项取决于table 是否可空 或 没有默认值
+        py_type = Optional[col.type.python_type] if (col.nullable or col.default is not None) else col.type.python_type
+        default = None if is_optional_type(py_type) else ...
         desc = col.comment if col.comment else None
         schema_fields[col.name] = (py_type, FieldInfo(default=default, description=desc))
 
@@ -139,6 +179,14 @@ def create_schema(
     )
     return schema_model
 
+
+def is_optional_type(type_hint) -> bool:
+    """判断给定的类型是否为可选类型（即选填）"""
+    origin = get_origin(type_hint)
+    args = get_args(type_hint)
+
+    # 检查是否为 Optional 或 Union，并且包含 None
+    return origin is Union and type(None) in args
 
 # ============================================EXAMPLE================================================
 # 数据库模型

@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.ctx import T_TABLE
 
 
-class BaseRepository(Generic[T_TABLE]):
+class BaseDao(Generic[T_TABLE]):
     def __init__(self, model: Type[T_TABLE], db: AsyncSession):
         self.model = model
         self.db = db

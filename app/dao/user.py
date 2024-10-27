@@ -9,12 +9,12 @@ from typing import Annotated
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.dao import BaseDao
 from app.db import use_db
 from app.models.user import TabUser
-from app.repository import BaseRepository
 
 
-class UserRepository(BaseRepository[TabUser]):
+class UserDao(BaseDao[TabUser]):
     DB_SESSION = Annotated[AsyncSession, Depends(use_db)]
 
     def __init__(self, db: DB_SESSION):

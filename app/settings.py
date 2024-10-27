@@ -4,6 +4,7 @@ __date__ = 2024-10-20
 __version__ = 0.0.1
 __description__ = 读取配置文件
 """
+
 from pathlib import Path
 from typing import Any
 
@@ -22,8 +23,9 @@ class RunEnv:
 
 class EnvSettings(BaseSettings):
     """
-        当前环境配置
+    当前环境配置
     """
+
     active: str = RunEnv.DEV
 
     class Config:
@@ -55,10 +57,11 @@ else:
 """)
 
 
-class InitSettings(BaseSettings):
+class DbSettings(BaseSettings):
     """
     数据库与Redis 连接配置
     """
+
     db_host: str
     db_port: int = 5432
     db_username: str
@@ -74,17 +77,26 @@ class InitSettings(BaseSettings):
         env_file = DIR_APP_ROOT.joinpath(f"__{APP_ENV}.env")
         env_file_encoding = STD_UTF8
 
+    def build_db_url(self):
+        return (
+            f"postgresql+asyncpg://{self.db_username}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
+        )
 
-init_settings = InitSettings()
+    def build_redis_url(self):
+        return f"redis://:{self.redis_password}@{self.redis_host}:{self.redis_port}/{self.redis_db}"
+
+
+db_settings = DbSettings()
 
 
 class BizSettings(BaseSettings):
     """
-        业务配置. 从数据库中读取后按module 放到不同的模块变量中
+    业务配置. 从数据库中读取后按module 放到不同的模块变量中
     """
-    mod_api: dict[str, Any]
-    mod_user: dict[str, Any]
+
+    pk_cache_ns: str = "public:cache"
+    mod_api: dict[str, Any] = {}
+    mod_user: dict[str, Any] = {}
 
 
-if __name__ == '__main__':
-    print(init_settings)
+biz_settings = BizSettings()
