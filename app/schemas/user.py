@@ -6,7 +6,7 @@ __description__ = 用户模型
 """
 
 from app.models.user import TabUser
-from app.utils.models import create_schema
+from app.utils.metas import create_schema
 
 UserSchema = create_schema(TabUser)
 

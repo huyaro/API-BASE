@@ -4,6 +4,8 @@ __date__ = 2024-10-20
 __version__ = 0.0.1
 __description__ = 
 """
+from typing import Annotated
+
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,6 +15,8 @@ from app.repository import BaseRepository
 
 
 class UserRepository(BaseRepository[TabUser]):
-    def __init__(self, db_session: AsyncSession = Depends(use_db)):
-        super().__init__(model=TabUser, db=db_session)
+    DB_SESSION = Annotated[AsyncSession, Depends(use_db)]
+
+    def __init__(self, db: DB_SESSION):
+        super().__init__(model=TabUser, db=db)
         ...

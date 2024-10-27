@@ -14,7 +14,7 @@ from sqlalchemy.orm import InstrumentedAttribute
 from app.ctx import T_TABLE
 from app.models import BaseTable
 from app.schemas import BaseSchema
-from app.utils.converts import dumps_json
+from app.utils.serials import dumps_json
 
 
 def table_to_schema(
@@ -37,7 +37,7 @@ def table_to_schema(
     :return:
     """
     data = {}
-    for field in schema.model_fields.keys():
+    for field in schema.model_fields:
         if hasattr(instance, field):
             value = getattr(instance, field)
             if exclude_none and value is None:

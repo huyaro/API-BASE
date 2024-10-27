@@ -13,6 +13,7 @@ from . import BaseTable
 
 class TabUser(BaseTable):
     __tablename__ = 'user'
+    __table_args__ = {'comment': '系统配置表'}
 
     username = mapped_column(String(50), unique=True, nullable=False)
     password = mapped_column(String(50), nullable=False)

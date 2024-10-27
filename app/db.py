@@ -13,7 +13,7 @@ from sqlalchemy import Engine, event
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
-from app.utils.converts import dumps_json
+from app.utils.serials import dumps_json
 
 # =============================== DATABASE ===============================
 ASYNC_DATABASE_URL = "postgresql+asyncpg://postgres:pgsql2023@localhost/example"
@@ -47,14 +47,14 @@ ignore_tables = ["pg_catalog.pg_class"]
 # 定义监听器函数
 @event.listens_for(Engine, "before_cursor_execute")
 def before_cursor_execute(conn, cursor, statement, parameters, context, executemany):
-    if not any([True if tab in statement else False for tab in ignore_tables]):
+    if not any([tab in statement for tab in ignore_tables]):
         logger.debug(f"SQL    => {statement}")
         logger.debug(f"Params => {parameters}")
 
 
 @event.listens_for(Engine, "after_cursor_execute")
 def after_cursor_execute(conn, cursor, statement, parameters, context, executemany):
-    if not any([True if tab in statement else False for tab in ignore_tables]):
+    if not any([tab in statement for tab in ignore_tables]):
         logger.info(f"Affected Rows  => {cursor.rowcount}")
 
 

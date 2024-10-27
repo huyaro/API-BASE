@@ -4,7 +4,7 @@ __date__ = 2024-10-20
 __version__ = 0.0.1
 __description__ = 逻辑处理层
 """
-from typing import Sequence
+from typing import Annotated, Sequence
 
 from fastapi import Depends
 
@@ -14,7 +14,9 @@ from app.schemas.user import UserSchema, UserSimple
 
 class UserService:
 
-    def __init__(self, user_dao: UserRepository = Depends()):
+    USER_REPOS = Annotated[UserRepository, Depends()]
+
+    def __init__(self, user_dao: USER_REPOS):
         self.user_dao = user_dao
 
     async def get_by_id(self, data_id: int) -> UserSchema:
