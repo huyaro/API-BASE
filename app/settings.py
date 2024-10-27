@@ -1,5 +1,5 @@
 """
-__author__ = <yanghu> yanghu@1000kx.com
+__author__ = <huyaro> huyaro.dev@outlook.com
 __date__ = 2024-10-20
 __version__ = 0.0.1
 __description__ = 读取配置文件
@@ -14,6 +14,9 @@ APP_NAME = "API-BASE"
 DIR_APP_ROOT = Path(__file__).parent.parent
 DIR_LOG = DIR_APP_ROOT.joinpath("logs")
 STD_UTF8 = "utf-8"
+ENV_FILE = DIR_APP_ROOT.joinpath(".env")
+if not ENV_FILE.exists():
+    raise FileNotFoundError(f"未找到 {ENV_FILE} 文件. 请先创建 .env, __dev.env 配置文件,")
 
 
 class RunEnv:

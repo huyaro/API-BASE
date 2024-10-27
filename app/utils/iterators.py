@@ -1,5 +1,5 @@
 """
-__author__ = <yanghu> yanghu@1000kx.com
+__author__ = <huyaro> huyaro.dev@outlook.com
 __date__ = 2024-10-27
 __version__ = 0.0.1
 __description__ = 集合相关转换工具
