@@ -1,6 +1,6 @@
 """
 __author__ = <huyaro> huyaro.dev@outlook.com
-__date__ = 2024-10-20
+__date__ = 2024-11-11
 __version__ = 0.0.1
 __description__ =
 """
@@ -12,12 +12,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dao import BaseDao
 from app.db import use_db
-from app.model.user import TabUser
+from app.model.settings import TabSettings
 
 
-class UserDao(BaseDao[TabUser]):
+class SettingsDao(BaseDao[TabSettings]):
     DB_SESSION = Annotated[AsyncSession, Depends(use_db)]
 
     def __init__(self, db: DB_SESSION):
-        super().__init__(table=TabUser, db=db)
-        ...
+        super().__init__(table=TabSettings, db=db)

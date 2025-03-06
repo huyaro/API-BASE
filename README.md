@@ -1,16 +1,34 @@
 # API-BASE
-> 基于FastAPI 的基础架构项目
+> Fast business model based on fastapi
 
 
-##　基础架构
+##　Infrastructure
 ```markdown
 - fastapi
-- sqlalchemy[pg/mysql]
+- sqlalchemy[pg]
 - redis-py
 - fastapi-cache2
 ```
 
-##　目录结构
+##　Directory
 ```markdown
-
+├── app   # project root
+│   ├── __init__.py
+│   ├── api           # api routers object
+│   ├── ctx.py        # context
+│   ├── dao           # data access object
+│   ├── db.py         # database info
+│   ├── exception.py  # exception
+│   ├── main.py       # app entry 
+│   ├── midware.py    # middleware
+│   ├── model      　 # sqlalchemy base model
+│   ├── schema        # pydantic schemas
+│   ├── service       # logic handle
+│   ├── settings.py   # app settings
+│   └── utils         # utils
+├── logs
+│   └── app_dev_2024-10-27.log
+├── poetry.lock
+├── pyproject.toml    # project config
+├── startup.py        # app boot
 ```

@@ -2,10 +2,10 @@
 __author__ = <huyaro> huyaro.dev@outlook.com
 __date__ = 2024-10-20
 __version__ = 0.0.1
-__description__ = 
+__description__ =
 """
+
+from .settings import router as settings_router
 from .user import router as user_router
 
-routers = [
-    user_router
-]
+routers = [user_router, settings_router]

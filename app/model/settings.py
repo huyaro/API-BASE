@@ -4,19 +4,17 @@ __date__ = 2024-10-27
 __version__ = 0.0.1
 __description__ = 业务配置表
 """
+
 from sqlalchemy import BOOLEAN, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import mapped_column
 
-from app.models import BaseTable
+from . import BaseTable
 
 
 class TabSettings(BaseTable):
-    __tablename__ = 'sys_settings'
-    __table_args__ = (
-        UniqueConstraint('module', 'key', name='uix_settings_module_key'),
-        {'comment': '系统配置表'}
-    )
+    __tablename__ = "sys_settings"
+    __table_args__ = (UniqueConstraint("module", "key", name="pk_settings_module_key"), {"comment": "系统配置表"})
 
     module = mapped_column(String(50), nullable=False, comment="模块名称")
     key = mapped_column(String(50), nullable=False, index=True, comment="配置项名称")

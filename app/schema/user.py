@@ -5,7 +5,7 @@ __version__ = 0.0.1
 __description__ = 用户模型
 """
 
-from app.models.user import TabUser
+from app.model.user import TabUser
 from app.utils.metas import create_schema
 
 UserSchema = create_schema(TabUser)

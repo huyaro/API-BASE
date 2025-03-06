@@ -17,7 +17,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
-from app.models import BaseTable
+from app.model import BaseTable
 from app.settings import APP_ENV, RunEnv, db_settings
 from app.utils.iterators import filter_dict_keys
 from app.utils.serials import dumps_json
@@ -102,10 +102,10 @@ async def pg_upsert(
     session: AsyncSession,
     table_type: type[BaseTable],
     values: list[dict[str, Any]],
-    conflict_columns: list[str],
-    ignore_columns: list[str] = None,
+    conflict_columns: set[str],
+    ignore_columns: set[str] = None,
     batch_size=300,
-):
+) -> list[int]:
     """
         异步版本的upsert. 不要在Ignore_columns中忽略 update_time,在更新时只要model_type中有该字段会自动更新为当前时间
 

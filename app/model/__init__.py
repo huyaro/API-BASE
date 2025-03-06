@@ -4,7 +4,8 @@ __date__ = 2024-10-20
 __version__ = 0.0.1
 __description__ = 数据库模型的基类
 """
-from typing import Any
+
+from typing import Any, Type
 
 from sqlalchemy import BIGINT, TIMESTAMP, func
 from sqlalchemy import inspect as sa_inspect
@@ -18,7 +19,9 @@ class BaseTable(AsyncAttrs, DeclarativeBase):
     id = mapped_column(BIGINT, primary_key=True, autoincrement=True, nullable=False, sort_order=-99)
 
     created_time = mapped_column(TIMESTAMP, nullable=False, sort_order=100, default=func.current_time)
-    updated_time = mapped_column(TIMESTAMP, nullable=False, sort_order=101, default=func.current_time, onupdate=func.current_time)
+    updated_time = mapped_column(
+        TIMESTAMP, nullable=False, sort_order=101, default=func.current_time, onupdate=func.current_time
+    )
 
     def __repr__(self) -> str:
         return str(self.to_dict())
@@ -34,10 +37,12 @@ class BaseTable(AsyncAttrs, DeclarativeBase):
         if exclude_none:
             return {
                 aliases.get(c.name, c.name): getattr(self, c.name)
-                for c in sa_inspect(type(self)).columns if getattr(self, c.name) is not None
+                for c in sa_inspect(type(self)).columns
+                if getattr(self, c.name) is not None
             }
         else:
-            return {
-                aliases.get(c.name, c.name): getattr(self, c.name, None)
-                for c in sa_inspect(type(self)).columns
-            }
+            return {aliases.get(c.name, c.name): getattr(self, c.name, None) for c in sa_inspect(type(self)).columns}
+
+    def get_biz_primary_keys(self) -> set[str]:
+        # 获取除 id 以外的主键字段
+        return {col.name for col in self.__table__.primary_key if col.name != "id"}

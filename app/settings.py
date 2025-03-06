@@ -16,7 +16,7 @@ DIR_LOG = DIR_APP_ROOT.joinpath("logs")
 STD_UTF8 = "utf-8"
 ENV_FILE = DIR_APP_ROOT.joinpath(".env")
 if not ENV_FILE.exists():
-    raise FileNotFoundError(f"未找到 {ENV_FILE} 文件. 请先创建 .env, __dev.env 配置文件,")
+    raise FileNotFoundError(f"未找到 {ENV_FILE} 文件. 请先创建 .env, __dev.env 配置文件")
 
 
 class RunEnv:
@@ -97,9 +97,18 @@ class BizSettings(BaseSettings):
     业务配置. 从数据库中读取后按module 放到不同的模块变量中
     """
 
-    pk_cache_ns: str = "public:cache"
-    mod_api: dict[str, Any] = {}
-    mod_user: dict[str, Any] = {}
+    pk_cache_ns: str = "public:settings"
+    mod_keyword: str = "__mod__"
+
+    __mod__api: dict[str, Any] = {}
+    __mod__user: dict[str, Any] = {}
+
+    def get_module_names(self) -> list[str]:
+        return [
+            name.replace(self.mod_keyword, "").upper()
+            for name, _ in self.model_fields
+            if name.startswith(self.mod_keyword)
+        ]
 
 
 biz_settings = BizSettings()

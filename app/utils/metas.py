@@ -4,6 +4,7 @@ __date__ = 2024-10-25
 __version__ = 0.0.1
 __description__ = schema 与model 的处理工具
 """
+
 from typing import Any, Callable, Optional, Set, Type, Union, get_args, get_origin
 
 from pydantic import BaseModel, create_model, field_validator
@@ -13,8 +14,8 @@ from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.orm import InstrumentedAttribute
 
 from app.ctx import T_TABLE
-from app.models import BaseTable
-from app.schemas import BaseSchema
+from app.model import BaseTable
+from app.schema import BaseSchema
 from app.utils.serials import dumps_json
 
 
@@ -48,9 +49,9 @@ def schema_to_dict(
 
     table_cols = [col.name for col in sa_inspect(table_cls).columns]
     table_data = {
-        to_snake(k):
-            mapping.get(k, mapping.get(to_snake(k)))(v) if (k in mapping or to_snake(k) in mapping) else v
-        for k, v in schema_data.items() if to_snake(k) in table_cols
+        to_snake(k): mapping.get(k, mapping.get(to_snake(k)))(v) if (k in mapping or to_snake(k) in mapping) else v
+        for k, v in schema_data.items()
+        if to_snake(k) in table_cols
     }
 
     return table_data
@@ -63,7 +64,7 @@ def table_to_schema(
     exclude_none: bool = True,
     exclude: list[str | InstrumentedAttribute] = None,
     include: list[str | InstrumentedAttribute] = None,
-    extra: dict[str, Any] = None
+    extra: dict[str, Any] = None,
 ) -> BaseModel:
     """
         转换model数据到指定的schema类型
@@ -172,10 +173,7 @@ def create_schema(
 
     # 动态创建模型
     schema_model = create_model(
-        f"{model_name}Schema",
-        __base__=BaseSchema,
-        __validators__=base_validators,
-        **schema_fields
+        f"{model_name}Schema", __base__=BaseSchema, __validators__=base_validators, **schema_fields
     )
     return schema_model
 
@@ -187,6 +185,7 @@ def is_optional_type(type_hint) -> bool:
 
     # 检查是否为 Optional 或 Union，并且包含 None
     return origin is Union and type(None) in args
+
 
 # ============================================EXAMPLE================================================
 # 数据库模型
