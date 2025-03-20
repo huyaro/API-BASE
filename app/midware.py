@@ -17,7 +17,6 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
 from app.db import async_redis
-from app.settings import biz_settings
 from app.utils.encrypts import hash_md5
 from app.utils.serials import dumps_json, loads_json
 

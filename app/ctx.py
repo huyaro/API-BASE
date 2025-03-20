@@ -6,7 +6,7 @@ __description__ = app context manager
 """
 
 import sys
-from typing import Generic, Union
+from typing import Generic
 
 from fastapi import FastAPI
 from loguru import logger
@@ -14,15 +14,15 @@ from pydantic import BaseModel
 from starlette.responses import JSONResponse
 from typing_extensions import TypeVar
 
-from app.db import async_engine
-from app.model import BaseTable
-from app.settings import APP_ENV, DIR_LOG, RunEnv
-from app.utils.times import FMT_DATE, dt_to_str
+from .db import async_engine
+from .model import BaseTable
+from .settings import settings
+from .utils.times import FMT_DATE, dt_to_str
 
 T_TABLE = TypeVar("T_TABLE", bound=BaseTable)
 T_SCHEMA = TypeVar("T_SCHEMA", bound=BaseModel)
 
-T_RESP_BODY = Union[T_SCHEMA | list[T_SCHEMA] | None]
+T_RESP_BODY = T_SCHEMA | list[T_SCHEMA] | None
 
 
 class APIResponse(BaseModel, Generic[T_SCHEMA]):
@@ -60,8 +60,10 @@ def configure_logging():
     logger.add(sys.stdout, level=__level, colorize=True, format=__format)
 
     # 配置文件日志
-    log_file_retention = "3 days" if APP_ENV == RunEnv.DEV else "30 days"  # 3天或30天保留
-    log_file_path = f"{DIR_LOG}/app_{APP_ENV}_{dt_to_str(pat=FMT_DATE)}.log"
+    log_file_retention = f"{settings.log.keep_days} days"
+    log_file_path = (
+        f"{settings.log.base_dir}/{settings.log.filename}.{settings.active_env}.{dt_to_str(pat=FMT_DATE)}.log"
+    )
 
     logger.add(
         log_file_path,

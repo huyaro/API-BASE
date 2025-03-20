@@ -18,15 +18,15 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
 from app.model import BaseTable
-from app.settings import APP_ENV, RunEnv, db_settings
+from app.settings import settings
 from app.utils.iterators import filter_dict_keys
 from app.utils.serials import dumps_json
 
-DB_POOL_SIZE = 5 if RunEnv.DEV == APP_ENV else 30
-REDIS_POOL_SIZE = 5 if RunEnv.DEV == APP_ENV else 50
+DB_POOL_SIZE = settings.database.pool_size
+REDIS_POOL_SIZE = settings.redis.pool_size
 
 # =============================== DATABASE ===============================
-ASYNC_DATABASE_URL = db_settings.build_db_url()
+ASYNC_DATABASE_URL = settings.database.build_url()
 async_engine = create_async_engine(
     ASYNC_DATABASE_URL,
     pool_size=DB_POOL_SIZE,
@@ -64,7 +64,7 @@ def after_cursor_execute(conn, cursor, statement, parameters, context, executema
 
 
 # =============================== REDIS ===============================
-REDIS_URL = db_settings.build_redis_url()
+REDIS_URL = settings.redis.build_url()
 redis_pool = ConnectionPool.from_url(REDIS_URL, max_connections=10)
 # 异步redis
 async_rds_pool = ConnectionPool.from_url(
@@ -79,7 +79,7 @@ async_rds_pool = ConnectionPool.from_url(
 async_redis = Redis(connection_pool=async_rds_pool)
 
 
-async def use_redis():
+async def dep_redis():
     """专门为fastapi的depends构建的依赖函数"""
     try:
         await async_redis.ping()
@@ -89,7 +89,7 @@ async def use_redis():
 
 
 @asynccontextmanager
-async def use_ctx_redis():
+async def dep_async_redis():
     """为普通异步函数中封装的上下文参数"""
     try:
         await async_redis.ping()
@@ -107,7 +107,7 @@ async def pg_upsert(
     batch_size=300,
 ) -> list[int]:
     """
-        异步版本的upsert. 不要在Ignore_columns中忽略 update_time,在更新时只要model_type中有该字段会自动更新为当前时间
+        异步版本的upsert.
 
     :param session: AsyncSession
     :param table_type: 基于Base的声明式模型
